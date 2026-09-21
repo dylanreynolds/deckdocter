@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deck Doctor — Subway</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --subway-green:#008C15; --subway-green-dark:#006B10; --subway-yellow:#FFC600;
+  --subway-white:#FFFFFF; --subway-gray-50:#F9FAFB; --subway-gray-100:#F3F4F6;
+  --subway-gray-200:#E5E7EB; --subway-gray-500:#6B7280; --subway-gray-700:#374151;
+  --subway-gray-900:#111827; --subway-red:#DC2626; --subway-info:#3B82F6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--subway-gray-50);color:var(--subway-gray-900);min-height:100vh;display:flex;flex-direction:column}
+.header{background:var(--subway-white);border-bottom:3px solid var(--subway-green);padding:0 2rem}
+.header-inner{max-width:80rem;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:4rem}
+.header-brand{display:flex;align-items:center;gap:.75rem}
+.header-brand-name{font-size:1.25rem;font-weight:700}
+.header-separator{color:var(--subway-gray-500);font-size:.875rem}
+.header-title{font-size:.875rem;font-weight:500;color:var(--subway-gray-700)}
+.main{max-width:80rem;margin:0 auto;padding:2rem;width:100%;flex:1}
+.card{background:var(--subway-white);border-radius:.5rem;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:1.5rem}
+.section{margin-bottom:1.5rem}
+.section-title{font-size:1.125rem;font-weight:600;margin-bottom:.25rem}
+.section-subtitle{font-size:.875rem;color:var(--subway-gray-500);margin-bottom:1rem}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:1.5rem}
+.kpi-label{font-size:.875rem;font-weight:500;color:var(--subway-gray-500)}
+.kpi-value{font-size:1.875rem;font-weight:600;margin-top:.5rem}
+.kpi-change{font-size:.875rem;margin-top:.25rem}
+.kpi-change.positive{color:var(--subway-green)}
+.kpi-change.negative{color:var(--subway-red)}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--subway-gray-50)}
+th{padding:.75rem 1rem;text-align:left;font-size:.75rem;font-weight:500;color:var(--subway-gray-500);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:.75rem 1rem;font-size:.875rem;border-top:1px solid var(--subway-gray-200)}
+tbody tr:nth-child(even){background:var(--subway-gray-50)}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.8125rem}
+.num{text-align:right;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:500}
+.badge-active{background:#E6F7E9;color:#006B10}
+.badge-warning{background:#FEF3C7;color:#92400E}
+.badge-error{background:#FEE2E2;color:#991B1B}
+.badge-neutral{background:var(--subway-gray-100);color:var(--subway-gray-700)}
+.privacy{background:#E6F7E9;border:1px solid #A7E3B4;border-radius:.5rem;padding:.75rem 1rem;margin-bottom:1.5rem;font-size:.875rem;color:#006B10;display:flex;gap:.625rem;align-items:flex-start}
+.warn{background:#FEF3C7;border:1px solid #FCD34D;border-radius:.5rem;padding:.75rem 1rem;font-size:.875rem;color:#92400E;margin-bottom:1rem}
+.drop{border:2px dashed var(--subway-gray-200);border-radius:.5rem;padding:3rem 2rem;text-align:center;background:var(--subway-white);transition:border-color .15s,background .15s;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--subway-green);background:#F3FBF5}
+.drop h2{font-size:1.125rem;font-weight:600;margin-bottom:.375rem}
+.drop p{font-size:.875rem;color:var(--subway-gray-500)}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1.125rem;border-radius:.375rem;font-family:inherit;font-size:.875rem;font-weight:600;border:1px solid transparent;cursor:pointer;text-decoration:none}
+.btn-primary{background:var(--subway-green);color:#fff}
+.btn-primary:hover{background:var(--subway-green-dark)}
+.btn-primary:disabled{background:var(--subway-gray-200);color:var(--subway-gray-500);cursor:not-allowed}
+.btn-secondary{background:var(--subway-white);color:var(--subway-gray-700);border-color:var(--subway-gray-200)}
+.btn-secondary:hover{border-color:var(--subway-gray-500)}
+.btn-sm{padding:.3125rem .625rem;font-size:.75rem;font-weight:500}
+.bar{height:.5rem;background:var(--subway-gray-100);border-radius:9999px;overflow:hidden;margin-top:.75rem}
+.bar-fill{height:100%;background:var(--subway-green);width:0;transition:width .2s}
+.status{font-size:.875rem;color:var(--subway-gray-700);margin-top:.5rem}
+.stack{display:grid;gap:.75rem}
+.opt{display:flex;gap:.75rem;align-items:flex-start;padding:.875rem 1rem;border:1px solid var(--subway-gray-200);border-radius:.375rem;cursor:pointer}
+.opt:hover{border-color:var(--subway-gray-500)}
+.opt input{margin-top:.1875rem;accent-color:var(--subway-green);width:1rem;height:1rem;flex:none}
+.opt-t{font-size:.875rem;font-weight:600}
+.opt-d{font-size:.8125rem;color:var(--subway-gray-500);margin-top:.125rem}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.steps{counter-reset:s;list-style:none}
+.steps li{counter-increment:s;position:relative;padding-left:2rem;font-size:.875rem;margin-bottom:.75rem;line-height:1.5}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:1.375rem;height:1.375rem;border-radius:9999px;background:var(--subway-green);color:#fff;font-size:.75rem;font-weight:600;display:flex;align-items:center;justify-content:center}
+.hint{font-size:.8125rem;color:var(--subway-gray-500);margin-top:.75rem;line-height:1.55}
+kbd{font-family:inherit;font-size:.8125rem;background:var(--subway-gray-100);border:1px solid var(--subway-gray-200);border-radius:.25rem;padding:.0625rem .3125rem}
+.footer{border-top:1px solid var(--subway-gray-200);margin-top:3rem;padding:1.5rem 2rem;text-align:center}
+.footer img{height:1.75rem;margin:0 auto .625rem;display:block}
+.footer-text{font-size:.75rem;color:var(--subway-gray-500);max-width:80rem;margin:0 auto}
+.hidden{display:none}
+@media(max-width:760px){.main{padding:1rem}.header{padding:0 1rem}.split{grid-template-columns:1fr}.kpi-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <span class="header-brand-name">Subway</span>
+      <span class="header-separator">|</span>
+      <span class="header-title">Deck Doctor — PowerPoint size diagnosis &amp; repair</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="privacy">
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="flex:none;margin-top:1px" aria-hidden="true"><path d="M10 1.5a.5.5 0 0 1 .223.053l5.5 2.75A.5.5 0 0 1 16 4.75v4.75c0 3.353-2.246 6.4-5.842 7.977a.4.4 0 0 1-.316 0C6.246 15.9 4 12.853 4 9.5V4.75a.5.5 0 0 1 .277-.447l5.5-2.75A.5.5 0 0 1 10 1.5m2.854 6.146a.5.5 0 0 0-.708 0L9.25 10.543 7.854 9.146a.5.5 0 1 0-.708.708l1.75 1.75a.5.5 0 0 0 .708 0z"/></svg>
+    <span><strong>Your deck never leaves this computer.</strong> All analysis and repair runs inside your browser. Nothing is uploaded, no server sees the file, and no copy is stored. Safe for Confidential and Restricted material.</span>
+  </div>
+
+  <div class="section" id="dropSection">
+    <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose a PowerPoint file to analyse">
+      <h2>Drop a .pptx here</h2>
+      <p>or click to choose a file &middot; nothing is uploaded anywhere</p>
+      <input type="file" id="file" accept=".pptx,.pptm" class="hidden">
+    </div>
+    <p class="hint" style="text-align:center">Decks over about 600&nbsp;MB may exhaust browser memory. If that happens, ask IT to run the desktop version.</p>
+  </div>
+
+  <div class="section hidden" id="progressSection">
+    <div class="card">
+      <div class="section-title" id="progTitle">Analysing deck</div>
+      <div class="bar"><div class="bar-fill" id="progBar"></div></div>
+      <div class="status" id="progText">Reading file…</div>
+    </div>
+  </div>
+
+  <div id="report" class="hidden"></div>
+
+</main>
+
+<footer class="footer">
+  <img src="/assets/subway-logo.svg" alt="Subway" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'SUBWAY',style:'font-weight:700;letter-spacing:.08em;color:#008C15;margin-bottom:.625rem'}))">
+  <div class="footer-text">
+    Runs entirely in your browser &middot; no data leaves your device &middot; &copy; 2026 Subway. Internal use only.
+  </div>
+</footer>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Deck Doctor — client-side only.
+   The file input below is NOT an upload. The File API hands us an ArrayBuffer
+   in-page; every byte is processed by JSZip and Canvas inside this tab and a
+   Web Worker. There is no fetch, no XHR, no form POST, no backend of any kind.
+   That is deliberate: decks routinely carry Confidential material, and the only
+   defensible way to process them is to never transmit them.
+--------------------------------------------------------------------------- */
+
+const VIDEO_EXT = ['mp4','mov','m4v','avi','wmv','mkv','webm','mpg','mpeg'];
+const RASTER_EXT = ['png','jpeg','jpg','bmp','tiff','tif','gif','webp'];
+
+const PROFILES = {
+  1: {name:'Conservative', max:1920, q:0.85},
+  2: {name:'Balanced',     max:1600, q:0.80},
+  3: {name:'Aggressive',   max:1280, q:0.75}
+};
+
+const el = id => document.getElementById(id);
+const fmt = b => b >= 1e9 ? (b/1073741824).toFixed(2)+' GB'
+               : b >= 1e6 ? (b/1048576).toFixed(1)+' MB'
+               : b >= 1e3 ? (b/1024).toFixed(0)+' KB' : b+' B';
+const esc = s => String(s);
+
+let STATE = null;   // {zip, name, size, analysis}
+let WORKER = null;
+
+/* ---------- worker source (built as a Blob so this stays one file) -------- */
+const WORKER_SRC = `
+importScripts('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+
+const VIDEO_EXT = ${JSON.stringify(VIDEO_EXT)};
+const RASTER_EXT = ${JSON.stringify(RASTER_EXT)};
+let ZIP = null;
+let ENC = null;   // Map original path -> {bytes, target, from, to}
+
+const extOf = n => (n.split('.').pop()||'').toLowerCase();
+const dirOf = n => n.slice(0, n.lastIndexOf('/'));
+
+function norm(base, rel){
+  const parts = (base ? base+'/' : '') + rel;
+  const out = [];
+  for (const seg of parts.split('/')){
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') out.pop(); else out.push(seg);
+  }
+  return out.join('/');
+}
+
+/* every internal Target across every .rels, resolved to an absolute part name */
+async function buildRefs(){
+  const refs = new Set();
+  const bySlide = {};                       // media path -> [slide numbers]
+  const relFiles = Object.keys(ZIP.files).filter(n => n.endsWith('.rels'));
+  for (const n of relFiles){
+    const base = dirOf(dirOf(n));           // ppt/slides/_rels/x.rels -> ppt
+    const xml = await ZIP.file(n).async('string');
+    const slideM = n.match(/ppt\\/slides\\/_rels\\/slide(\\d+)\\.xml\\.rels/);
+    const re = /Target="([^"]+)"([^>]*)/g;
+    let m;
+    while ((m = re.exec(xml))){
+      const t = m[1], rest = m[2];
+      if (/^(https?:|#|mailto:|file:)/i.test(t)) continue;
+      if (/TargetMode="External"/.test(rest)) continue;
+      const abs = norm(base, t);
+      refs.add(abs);
+      if (slideM){
+        (bySlide[abs] = bySlide[abs] || []).push(+slideM[1]);
+      }
+    }
+  }
+  return {refs, bySlide};
+}
+
+async function decodeToBitmap(blob){
+  return await createImageBitmap(blob);
+}
+
+/* returns {bytes, ext} for the best encoding of this raster, or null to keep */
+async function reencode(path, u8, profile){
+  const ext = extOf(path);
+  const blob = new Blob([u8]);
+  let bmp;
+  try { bmp = await decodeToBitmap(blob); }
+  catch(e){ return null; }                   // undecodable (EMF/WMF/etc) -> leave alone
+  let {width:w, height:h} = bmp;
+  const scale = Math.max(w,h) > profile.max ? profile.max/Math.max(w,h) : 1;
+  const nw = Math.max(1, Math.round(w*scale)), nh = Math.max(1, Math.round(h*scale));
+  const cv = new OffscreenCanvas(nw, nh);
+  const cx = cv.getContext('2d', {willReadFrequently:true});
+  cx.drawImage(bmp, 0, 0, nw, nh);
+  bmp.close();
+
+  /* does the alpha channel actually carry information? */
+  let alphaUsed = false;
+  if (ext === 'png' || ext === 'gif' || ext === 'webp' || ext === 'tiff' || ext === 'tif'){
+    const d = cx.getImageData(0,0,nw,nh).data;
+    for (let i = 3; i < d.length; i += 4){ if (d[i] !== 255){ alphaUsed = true; break; } }
+  }
+
+  let out, outExt;
+  if (alphaUsed){
+    out = await cv.convertToBlob({type:'image/png'});
+    outExt = 'png';
+  } else {
+    out = await cv.convertToBlob({type:'image/jpeg', quality:profile.q});
+    outExt = 'jpeg';
+  }
+  const bytes = new Uint8Array(await out.arrayBuffer());
+  if (bytes.length >= u8.length) return null;          // no win, keep original
+  return {bytes, ext:outExt, w:nw, h:nh, ow:w, oh:h, alphaUsed};
+}
+
+/* ---------------- video de-linking ------------------------------------------
+   Removes embedded video and repoints the shape's click action at a Stream URL.
+   The poster frame is already present in every video shape's <p:blipFill>, so
+   the slide looks unchanged; the click opens Stream instead of playing inline.
+
+   Details that cost real debugging:
+     - Relationship attributes come in ANY order and may carry TargetMode, so
+       they must be parsed as attributes, not matched positionally.
+     - A deck can carry a MALFORMED video rel (Target="NULL", TargetMode
+       External) where the only usable pointer is the secondary p14:media
+       r:embed. Keying off <a:videoFile> alone leaves such a shape half
+       converted and the package with a dangling r:id.
+     - <p14:media> may have children (<p14:trim/>), so it is not self-closing.
+     - A dangling r:id is exactly what makes PowerPoint show the repair prompt,
+       and neither python-pptx nor LibreOffice will report it. Hence the
+       self-check at the end of the repair, which refuses to emit a bad file. */
+
+const MEDIA_EXT_URI = '{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}';
+const HLINK_TYPE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+
+function attrsOf(tag){
+  const o = {};
+  const re = /([A-Za-z:]+)="([^"]*)"/g;
+  let m; while ((m = re.exec(tag))) o[m[1]] = m[2];
+  return o;
+}
+
+async function planDelink(urls){
+  const slideXml = {}, relXml = {}, removeMedia = new Set(), notes = [];
+  const relPaths = Object.keys(ZIP.files)
+    .filter(n => /^ppt\\/slides\\/_rels\\/slide\\d+\\.xml\\.rels$/.test(n)).sort();
+
+  for (const rp of relPaths){
+    const slide = rp.replace('_rels/','').replace('.rels','');
+    const sn = (slide.match(/slide(\\d+)/) || [])[1];
+    let rx = await ZIP.file(rp).async('string');
+    let sx = await ZIP.file(slide).async('string');
+
+    const kill = {}, bogus = new Set();
+    for (const tag of (rx.match(/<Relationship[^>]*\\/>/g) || [])){
+      const a = attrsOf(tag);
+      const typ = a.Type || '', tgt = a.Target || '', rid = a.Id || '';
+      if (!/2006\\/relationships\\/video/.test(typ) && !/2007\\/relationships\\/media/.test(typ)) continue;
+      if (a.TargetMode === 'External' || tgt === 'NULL' || tgt === ''){
+        bogus.add(rid);
+        notes.push('slide' + sn + ': malformed video relationship ' + rid +
+                   ' (Target="' + tgt + '") — pre-existing defect in the source deck');
+        continue;
+      }
+      const abs = norm('ppt/slides', tgt);
+      if (urls[abs]) kill[rid] = abs;
+    }
+    if (!Object.keys(kill).length && !bogus.size) continue;
+
+    const used = new Set();
+    for (const m of (rx + sx).matchAll(/r:(?:id|embed|link)="(rId\\d+)"/g)) used.add(m[1]);
+    let next = 1;
+    for (const m of rx.matchAll(/Id="rId(\\d+)"/g)) next = Math.max(next, +m[1] + 1);
+    const added = [];
+    const newRid = () => {
+      while (used.has('rId' + next)) next++;
+      const r = 'rId' + next; used.add(r); next++; return r;
+    };
+
+    sx = sx.replace(/<p:pic>[\\s\\S]*?<\\/p:pic>/g, (blk) => {
+      const refs = new Set();
+      for (const m of blk.matchAll(/<a:videoFile r:link="(rId\\d+)"/g)) refs.add(m[1]);
+      for (const m of blk.matchAll(/<p14:media[^>]*r:embed="(rId\\d+)"/g)) refs.add(m[1]);
+      const hits = [...refs].filter(r => kill[r]);
+      const hasBogus = [...refs].some(r => bogus.has(r));
+      if (!hits.length && !hasBogus) return blk;
+
+      const url = hits.length ? urls[kill[hits[0]]] : Object.values(urls)[0];
+      let b = blk.replace(/<a:videoFile r:link="rId\\d+"\\s*\\/>/g, '');
+      b = b.replace(/<p:extLst><p:ext uri="\\{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230\\}">[\\s\\S]*?<\\/p:ext><\\/p:extLst>/g, '');
+      const rid = newRid(); added.push([rid, url]);
+      b = b.replace(/<a:hlinkClick r:id="" action="ppaction:\\/\\/media"\\s*\\/>/,
+                    '<a:hlinkClick r:id="' + rid + '"/>');
+      return b;
+    });
+
+    for (const rid of new Set([...Object.keys(kill), ...bogus])){
+      rx = rx.replace(new RegExp('<Relationship[^>]*Id="' + rid + '"[^>]*\\\\/>','g'), '');
+      if (kill[rid]) removeMedia.add(kill[rid]);
+    }
+    let inject = '';
+    for (const [rid, url] of added){
+      inject += '<Relationship Id="' + rid + '" Type="' + HLINK_TYPE +
+                '" Target="' + url.replace(/&/g,'&amp;').replace(/"/g,'&quot;') +
+                '" TargetMode="External"/>';
+    }
+    rx = rx.replace('</Relationships>', inject + '</Relationships>');
+
+    relXml[rp] = rx; slideXml[slide] = sx;
+  }
+  return {slideXml, relXml, removeMedia, notes};
+}
+
+/* Refuses to emit a package where a slide references a relationship that is
+   not there. This is the defect class other validators silently accept. */
+async function selfCheck(zipObj){
+  const bad = [];
+  for (const n of Object.keys(zipObj.files)){
+    const m = n.match(/^ppt\\/slides\\/slide(\\d+)\\.xml$/);
+    if (!m) continue;
+    const rp = 'ppt/slides/_rels/slide' + m[1] + '.xml.rels';
+    if (!zipObj.file(rp)) continue;
+    const have = new Set();
+    for (const x of (await zipObj.file(rp).async('string')).matchAll(/Id="(rId\\d+)"/g)) have.add(x[1]);
+    const sx = await zipObj.file(n).async('string');
+    const miss = [];
+    for (const x of sx.matchAll(/r:(?:id|embed|link)="(rId\\d+)"/g))
+      if (!have.has(x[1])) miss.push(x[1]);
+    if (miss.length) bad.push(n + ' -> ' + [...new Set(miss)].join(', '));
+  }
+  return bad;
+}
+
+self.onmessage = async (ev) => {
+  const msg = ev.data;
+  try {
+    if (msg.cmd === 'analyze'){
+      post('phase', {title:'Reading package', pct:2, text:'Opening the .pptx container…'});
+      ZIP = await JSZip.loadAsync(msg.buf);
+      const files = Object.values(ZIP.files).filter(f => !f.dir);
+      const slides = files.filter(f => /^ppt\\/slides\\/slide\\d+\\.xml$/.test(f.name)).length;
+
+      post('phase', {title:'Mapping relationships', pct:8, text:'Resolving every relationship target…'});
+      const {refs, bySlide} = await buildRefs();
+
+      const media = files.filter(f => f.name.startsWith('ppt/media/'));
+      const items = [];
+      let done = 0;
+      ENC = new Map();
+      const profile = PROFILES_W[msg.level];
+
+      for (const f of media){
+        const ext = extOf(f.name);
+        const u8 = await f.async('uint8array');
+        const orig = u8.length;
+        const referenced = refs.has(f.name);
+        /* de-dupe: a video is referenced twice per slide (once by the video rel,
+           once by the ms-media rel), which otherwise reports "69, 69" */
+        const slidesOn = [...new Set(bySlide[f.name] || [])].sort((a,b)=>a-b);
+        const rec = {path:f.name, ext, orig, referenced, slides:slidesOn,
+                     kind: VIDEO_EXT.includes(ext) ? 'video' : RASTER_EXT.includes(ext) ? 'raster' : 'other',
+                     newSize:orig, w:null, h:null, ow:null, oh:null, action:'keep'};
+
+        if (!referenced){
+          rec.action = 'drop'; rec.newSize = 0;
+        } else if (rec.kind === 'raster'){
+          const r = await reencode(f.name, u8, profile);
+          if (r){
+            rec.newSize = r.bytes.length;
+            rec.w = r.w; rec.h = r.h; rec.ow = r.ow; rec.oh = r.oh;
+            const target = r.ext === extOf(f.name) ? f.name
+                         : f.name.slice(0, f.name.lastIndexOf('.')) + '.' + r.ext;
+            rec.action = target === f.name ? 'recompress' : 'convert';
+            rec.target = target;
+            ENC.set(f.name, {bytes:r.bytes, target});
+          }
+        }
+        items.push(rec);
+        done++;
+        post('phase', {title:'Inspecting media', pct: 8 + Math.round(82*done/media.length),
+                       text:'Media part '+done+' of '+media.length});
+      }
+
+      post('phase', {title:'Finalising', pct:96, text:'Building report…'});
+      post('done-analyze', {slides, items, totalEntries:files.length,
+                            hasThumb: !!ZIP.file('docProps/thumbnail.jpeg')});
+      return;
+    }
+
+    if (msg.cmd === 'repair'){
+      const {dropOrphans, doRaster, stripVideo} = msg.opts;
+      const out = new JSZip();
+      /* createFolders:false on every write — JSZip otherwise synthesises bare
+         directory entries ("ppt/media/") that the source package never had. */
+      const OPT = {createFolders:false};
+      const names = Object.keys(ZIP.files).filter(n => !ZIP.files[n].dir);
+
+      /* which media parts get renamed, so .rels can be rewritten */
+      const rename = new Map();
+      if (doRaster) for (const [k,v] of ENC) if (v.target !== k) rename.set(k, v.target);
+
+      const orphan = new Set(msg.opts.orphans || []);
+      const removed = new Set();
+      if (dropOrphans) for (const o of orphan) removed.add(o);
+      if (msg.opts.dropThumb) removed.add('docProps/thumbnail.jpeg');
+
+      /* de-link video: needs a Stream URL per media part */
+      let delink = null;
+      const vurls = msg.opts.videoUrls || {};
+      if (Object.keys(vurls).length){
+        post('phase', {title:'De-linking video', pct:3, text:'Rewriting slide shapes and relationships…'});
+        delink = await planDelink(vurls);
+        for (const m of delink.removeMedia) removed.add(m);
+      }
+
+      let i = 0;
+      for (const n of names){
+        i++;
+        if (i % 25 === 0) post('phase', {title:'Writing repaired deck', pct: Math.round(90*i/names.length),
+                                         text:'Part '+i+' of '+names.length});
+        if (removed.has(n)) continue;
+
+        /* de-linked slides and their rels are already rewritten strings */
+        if (delink && delink.slideXml[n]){ out.file(n, delink.slideXml[n], OPT); continue; }
+        if (delink && delink.relXml[n]){
+          let x = delink.relXml[n];
+          if (rename.size){
+            const base = dirOf(dirOf(n));
+            x = x.replace(/Target="([^"]+)"/g, (full, t) => {
+              if (/^(https?:|#|mailto:)/i.test(t)) return full;
+              const abs = norm(base, t);
+              if (!rename.has(abs)) return full;
+              return 'Target="' + relPath(base, rename.get(abs)) + '"';
+            });
+          }
+          out.file(n, x, OPT);
+          continue;
+        }
+
+        if (n.endsWith('.rels')){
+          let xml = await ZIP.file(n).async('string');
+          const base = dirOf(dirOf(n));
+          if (rename.size){
+            xml = xml.replace(/Target="([^"]+)"/g, (full, t) => {
+              if (/^https?:|^#|mailto:/i.test(t)) return full;
+              const abs = norm(base, t);
+              if (!rename.has(abs)) return full;
+              const tgt = rename.get(abs);
+              const rel = relPath(base, tgt);
+              return 'Target="'+rel+'"';
+            });
+          }
+          if (msg.opts.dropThumb){
+            xml = xml.replace(/<Relationship[^>]*Target="[^"]*thumbnail\\.jpeg"[^>]*\\/>/g, '');
+          }
+          out.file(n, xml, OPT);
+          continue;
+        }
+
+        if (n === '[Content_Types].xml'){
+          let xml = await ZIP.file(n).async('string');
+          if (!/Extension="jpeg"/i.test(xml)){
+            xml = xml.replace(/(<Types[^>]*>)/, '$1<Default Extension="jpeg" ContentType="image/jpeg"/>');
+          }
+          if (msg.opts.dropThumb){
+            xml = xml.replace(/<Override PartName="\\/docProps\\/thumbnail\\.jpeg"[^>]*\\/>/g, '');
+          }
+          out.file(n, xml, OPT);
+          continue;
+        }
+
+        if (doRaster && ENC.has(n)){
+          const e = ENC.get(n);
+          out.file(e.target, e.bytes,
+                   {...OPT, compression: /\\.(jpe?g)$/i.test(e.target) ? 'STORE' : 'DEFLATE'});
+          continue;
+        }
+
+        const u8 = await ZIP.file(n).async('uint8array');
+        const isMedia = n.startsWith('ppt/media/');
+        out.file(n, u8, {...OPT, compression: isMedia ? 'STORE' : 'DEFLATE'});
+      }
+
+      post('phase', {title:'Verifying', pct:90, text:'Checking every relationship resolves…'});
+      const broken = await selfCheck(out);
+      if (broken.length){
+        post('error', {message:'Internal check failed — the rebuilt deck has slides referencing ' +
+          'relationships that are missing (' + broken.slice(0,3).join(' | ') +
+          '). Nothing was produced, because PowerPoint would show the repair prompt on this file. ' +
+          'Your original is untouched.'});
+        return;
+      }
+
+      post('phase', {title:'Compressing', pct:92, text:'Zipping the package…'});
+      /* streamFiles MUST stay false. It makes JSZip emit local headers with the
+         data-descriptor flag (general purpose bit 3) and zero sizes up front.
+         That is legal ZIP but not legal OPC: strict readers reject the package
+         outright — LibreOffice reports "source file could not be loaded", and
+         PowerPoint shows the repair prompt. Verified against this deck. */
+      const blob = await out.generateAsync(
+        {type:'blob', compression:'DEFLATE', compressionOptions:{level:6}, streamFiles:false},
+        md => post('phase', {title:'Compressing', pct: 92 + Math.round(8*md.percent/100),
+                             text: Math.round(md.percent)+'%'})
+      );
+      post('done-repair', {blob, notes: delink ? delink.notes : [],
+                           delinked: delink ? delink.removeMedia.size : 0});
+      return;
+    }
+
+    if (msg.cmd === 'extract'){
+      const u8 = await ZIP.file(msg.path).async('uint8array');
+      post('done-extract', {path:msg.path, buf:u8.buffer}, [u8.buffer]);
+      return;
+    }
+  } catch (err){
+    post('error', {message: (err && err.message) || String(err)});
+  }
+};
+
+function relPath(fromDir, toPath){
+  const a = fromDir ? fromDir.split('/') : [];
+  const b = toPath.split('/');
+  let i = 0;
+  while (i < a.length && i < b.length-1 && a[i] === b[i]) i++;
+  const up = a.slice(i).map(()=> '..');
+  return up.concat(b.slice(i)).join('/');
+}
+function post(type, payload, transfer){ self.postMessage({type, payload}, transfer||[]); }
+const PROFILES_W = ${JSON.stringify(PROFILES)};
+`;
+
+/* ---------------------------------- UI ----------------------------------- */
+
+function route(msg){
+  const {type, payload} = msg;
+  if (type === 'phase')             setProgress(payload);
+  else if (type === 'done-analyze') onAnalysis(payload);
+  else if (type === 'done-repair')  onRepaired(payload.blob, payload);
+  else if (type === 'done-extract') onExtracted(payload);
+  else if (type === 'error')        onError(payload.message);
+}
+
+/* Runs the identical worker source on the main thread.
+   Chrome refuses to construct any Worker from a file:// document (opaque
+   origin), so the emailable single-file copy has no worker available. Rather
+   than maintain a second implementation, the same source is evaluated with a
+   stand-in `self`. The pipeline awaits once per media part, so the event loop
+   still turns and progress still paints — it is slower, not broken. */
+function makeInlineWorker(){
+  const scope = {
+    postMessage: (m) => route(m),
+    onmessage: null,
+    terminate(){}
+  };
+  const importShim = () => {};   // JSZip is already loaded in the page
+  new Function('self','importScripts', WORKER_SRC)(scope, importShim);
+  return {
+    postMessage: (m) => { Promise.resolve().then(() => scope.onmessage({data:m})); },
+    terminate(){}
+  };
+}
+
+function startWorker(){
+  if (WORKER) WORKER.terminate();
+  try {
+    const w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], {type:'text/javascript'})));
+    w.onmessage = ev => route(ev.data);
+    w.onerror = e => onError(e.message || 'Background processing failed');
+    WORKER = w;
+  } catch (e){
+    WORKER = makeInlineWorker();
+  }
+}
+
+function setProgress({title, pct, text}){
+  el('progressSection').classList.remove('hidden');
+  if (title) el('progTitle').textContent = title;
+  el('progBar').style.width = pct + '%';
+  el('progText').textContent = text || '';
+}
+
+function onError(msg){
+  el('progressSection').classList.add('hidden');
+  const r = el('report');
+  r.classList.remove('hidden');
+  r.replaceChildren();
+  const c = document.createElement('div');
+  c.className = 'card';
+  const h = document.createElement('div');
+  h.className = 'section-title'; h.textContent = 'Could not process this deck';
+  const p = document.createElement('p');
+  p.className = 'hint';
+  p.textContent = msg + ' — if this is a memory error the deck is likely too large for the browser; if the file is a .ppt (not .pptx) resave it as .pptx first.';
+  c.append(h, p); r.append(c);
+}
+
+/* ---- file intake -------------------------------------------------------- */
+const drop = el('drop'), fileInput = el('file');
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); } });
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) intake(f); });
+fileInput.addEventListener('change', e => { const f = e.target.files[0]; if (f) intake(f); });
+
+async function intake(file){
+  if (!/\.pptm?x$/i.test(file.name)){
+    onError('That is not a .pptx file. Deck Doctor works on the Open XML format only.');
+    return;
+  }
+  STATE = {file, name:file.name, size:file.size, level:2};
+  await runAnalysis();
+}
+
+/* Re-reads the File each time. The ArrayBuffer is transferred to the worker
+   (zero-copy, which matters at 300 MB+), so it cannot be reused — but the File
+   handle stays valid and can be read again for a different quality level. */
+async function runAnalysis(){
+  el('report').classList.add('hidden');
+  el('dropSection').classList.add('hidden');
+  setProgress({title:'Reading file', pct:1, text:'Loading '+fmt(STATE.size)+' from disk…'});
+  const buf = await STATE.file.arrayBuffer();
+  startWorker();
+  WORKER.postMessage({cmd:'analyze', buf, level:STATE.level}, [buf]);
+}
+
+/* ---- report ------------------------------------------------------------- */
+function onAnalysis(a){
+  STATE.analysis = a;
+  el('progressSection').classList.add('hidden');
+  renderReport();
+}
+
+function renderReport(){
+  const a = STATE.analysis;
+  const items = a.items;
+  const p = PROFILES[STATE.level];
+
+  const videos  = items.filter(i => i.kind === 'video' && i.referenced);
+  const rasters = items.filter(i => i.kind === 'raster' && i.referenced);
+  const orphans = items.filter(i => !i.referenced);
+  const other   = items.filter(i => i.kind === 'other' && i.referenced);
+
+  const sum = arr => arr.reduce((s,i)=>s+i.orig,0);
+  const vidBytes = sum(videos), rasBytes = sum(rasters), orphBytes = sum(orphans);
+  const rasterSaving = rasters.reduce((s,i)=>s+(i.orig-i.newSize),0);
+  const converts = rasters.filter(i=>i.action==='convert').length;
+  const recomps  = rasters.filter(i=>i.action==='recompress').length;
+
+  const autoSaving = rasterSaving + orphBytes + (a.hasThumb ? 0 : 0);
+  const afterAuto  = STATE.size - autoSaving;
+  const afterVideo = afterAuto - vidBytes;
+
+  const r = el('report');
+  r.replaceChildren();
+  r.classList.remove('hidden');
+
+  /* --- KPIs --- */
+  const kpis = [
+    ['Current size', fmt(STATE.size), a.slides + ' slides · ' + a.totalEntries + ' parts', ''],
+    ['After automatic repair', fmt(afterAuto), '−' + fmt(autoSaving) + ' (' + Math.round(100*autoSaving/STATE.size) + '%)', 'positive'],
+    ['After moving video to Stream', fmt(afterVideo), afterVideo < 50*1048576 ? 'presentable and shareable' : 'still large — consider splitting', afterVideo < 50*1048576 ? 'positive' : 'negative'],
+    ['Media share of file', Math.round(100*(vidBytes+rasBytes+orphBytes)/STATE.size) + '%', fmt(vidBytes) + ' video · ' + fmt(rasBytes) + ' images', '']
+  ];
+  const grid = document.createElement('div'); grid.className = 'kpi-grid';
+  for (const [label, val, sub, cls] of kpis){
+    const c = document.createElement('div'); c.className = 'card';
+    const l = document.createElement('div'); l.className = 'kpi-label'; l.textContent = label;
+    const v = document.createElement('div'); v.className = 'kpi-value'; v.textContent = val;
+    const s = document.createElement('div'); s.className = 'kpi-change ' + cls; s.textContent = sub;
+    c.append(l,v,s); grid.append(c);
+  }
+  r.append(grid);
+
+  /* --- diagnosis --- */
+  const diag = document.createElement('div'); diag.className = 'section';
+  const dc = document.createElement('div'); dc.className = 'card';
+  const dt = document.createElement('div'); dt.className = 'section-title'; dt.textContent = 'Diagnosis';
+  const ds = document.createElement('div'); ds.className = 'section-subtitle';
+  ds.textContent = 'What is actually taking up the space, largest cause first.';
+  dc.append(dt, ds);
+
+  const findings = [];
+  if (vidBytes > 0.15*STATE.size)
+    findings.push(['error','Embedded video is the dominant cost',
+      videos.length + ' video file' + (videos.length>1?'s':'') + ' totalling ' + fmt(vidBytes) + ' — ' +
+      Math.round(100*vidBytes/STATE.size) + '% of the deck. This cannot be fixed by compression; the video has to leave the file.']);
+  if (rasterSaving > 5*1048576)
+    findings.push(['warning','Images are stored far larger than they display',
+      rasters.length + ' images totalling ' + fmt(rasBytes) + '. Re-encoding at ' + p.max + 'px recovers ' +
+      fmt(rasterSaving) + ' with no visible change' + (converts ? ' (' + converts + ' PNGs are photographs and convert to JPEG; ' + recomps + ' stay PNG)' : '') + '.']);
+  if (orphans.length)
+    findings.push(['warning','Orphaned media from deleted slides',
+      orphans.length + ' media part' + (orphans.length>1?'s':'') + ' (' + fmt(orphBytes) + ') are not referenced by any slide. PowerPoint never removes these.']);
+  if (!findings.length)
+    findings.push(['active','No major bloat found','This deck is already reasonably sized for its content.']);
+
+  const list = document.createElement('div'); list.className = 'stack';
+  for (const [kind, title, body] of findings){
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:.875rem 1rem;border:1px solid var(--subway-gray-200);border-radius:.375rem';
+    const b = document.createElement('span'); b.className = 'badge badge-' + kind;
+    b.textContent = kind === 'error' ? 'Primary cause' : kind === 'warning' ? 'Recoverable' : 'Clear';
+    const t = document.createElement('div'); t.className = 'opt-t'; t.style.marginTop = '.5rem'; t.textContent = title;
+    const d = document.createElement('div'); d.className = 'opt-d'; d.textContent = body;
+    row.append(b,t,d); list.append(row);
+  }
+  dc.append(list); diag.append(dc); r.append(diag);
+
+  /* --- options + action --- */
+  const act = document.createElement('div'); act.className = 'section';
+  const ac = document.createElement('div'); ac.className = 'card';
+  const at = document.createElement('div'); at.className = 'section-title'; at.textContent = 'Repair';
+  const asub = document.createElement('div'); asub.className = 'section-subtitle';
+  asub.textContent = 'Your original file is never modified — this produces a new copy.';
+  ac.append(at, asub);
+
+  const opts = document.createElement('div'); opts.className = 'stack';
+  const mk = (id, checked, title, desc, disabled) => {
+    const l = document.createElement('label'); l.className = 'opt';
+    const i = document.createElement('input'); i.type='checkbox'; i.id=id; i.checked=checked; i.disabled=!!disabled;
+    const w = document.createElement('div');
+    const t = document.createElement('div'); t.className='opt-t'; t.textContent=title;
+    const d = document.createElement('div'); d.className='opt-d'; d.textContent=desc;
+    w.append(t,d); l.append(i,w); opts.append(l); return i;
+  };
+  mk('optRaster', true, 'Re-encode images at ' + p.name.toLowerCase() + ' quality (' + p.max + 'px, q' + Math.round(p.q*100) + ')',
+     rasterSaving > 0 ? 'Recovers ' + fmt(rasterSaving) + '. Validated as visually identical at presentation size.' : 'No measurable win on this deck.',
+     rasterSaving <= 0);
+  mk('optOrphan', orphans.length > 0, 'Remove orphaned media',
+     orphans.length ? 'Deletes ' + orphans.length + ' unreferenced part' + (orphans.length>1?'s':'') + ' (' + fmt(orphBytes) + ').' : 'None found in this deck.',
+     orphans.length === 0);
+  mk('optThumb', a.hasThumb, 'Drop the embedded preview thumbnail',
+     a.hasThumb ? 'Small win, regenerated by PowerPoint on next save.' : 'Not present.', !a.hasThumb);
+
+  const lvl = document.createElement('label'); lvl.className='opt'; lvl.style.cursor='default';
+  const lw = document.createElement('div'); lw.style.width='100%';
+  const lt = document.createElement('div'); lt.className='opt-t';
+  lt.textContent = 'Compression level — currently ' + p.name.toLowerCase() +
+                   ' (' + p.max + 'px, quality ' + Math.round(p.q*100) + ')';
+  const sl = document.createElement('input'); sl.type='range'; sl.min='1'; sl.max='3'; sl.step='1';
+  sl.style.cssText='width:100%;margin-top:.625rem;accent-color:var(--subway-green)';
+  sl.setAttribute('aria-label','Compression level');
+  sl.value = String(STATE.level);
+  sl.addEventListener('input', () => {
+    const q = PROFILES[+sl.value];
+    lt.textContent = 'Compression level — currently ' + q.name.toLowerCase() +
+                     ' (' + q.max + 'px, quality ' + Math.round(q.q*100) + ')';
+  });
+  const lr = document.createElement('div');
+  lr.style.cssText='display:flex;justify-content:space-between;font-size:.75rem;color:var(--subway-gray-500);margin-top:.25rem';
+  const s1=document.createElement('span'); s1.textContent='Conservative · 1920px';
+  const s2=document.createElement('span'); s2.textContent='Balanced · 1600px';
+  const s3=document.createElement('span'); s3.textContent='Aggressive · 1280px';
+  lr.append(s1,s2,s3);
+  const note=document.createElement('div'); note.className='opt-d'; note.style.marginTop='.5rem';
+  note.textContent='Changing this re-analyses the deck.';
+  lw.append(lt,sl,lr,note); lvl.append(lw); opts.append(lvl);
+  sl.addEventListener('change', () => {
+    if (+sl.value === STATE.level) return;
+    STATE.level = +sl.value;
+    runAnalysis();
+  });
+
+  ac.append(opts);
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;align-items:center';
+  const go = document.createElement('button'); go.className='btn btn-primary'; go.id='btnRepair';
+  go.textContent='Build repaired copy';
+  go.addEventListener('click', () => doRepair(orphans, videos));
+  const again = document.createElement('button'); again.className='btn btn-secondary';
+  again.textContent='Analyse a different deck';
+  again.addEventListener('click', () => location.reload());
+  btnRow.append(go, again);
+  ac.append(btnRow);
+
+  const dlHost = document.createElement('div'); dlHost.id='dlHost'; dlHost.style.marginTop='1rem';
+  ac.append(dlHost);
+  act.append(ac); r.append(act);
+
+  /* --- video panel --- */
+  if (videos.length){
+    const vs = document.createElement('div'); vs.className='section';
+    const vc = document.createElement('div'); vc.className='card';
+    const vt = document.createElement('div'); vt.className='section-title';
+    vt.textContent = 'Video — ' + fmt(vidBytes) + ', the largest single win available';
+    const vsub = document.createElement('div'); vsub.className='section-subtitle';
+    vsub.textContent = 'Do these two steps first, then build. Fill in every link and the repair removes the video outright and repoints the existing thumbnail at Stream — no manual PowerPoint work needed.';
+    vc.append(vt, vsub);
+
+    /* Step 1 — get the files out. A folder picker writes straight into a
+       OneDrive-synced folder, so sync performs the upload. */
+    const step1 = document.createElement('div');
+    step1.style.cssText='padding:.875rem 1rem;border:1px solid var(--subway-gray-200);border-radius:.375rem;margin-bottom:1rem';
+    const s1t = document.createElement('div'); s1t.className='opt-t'; s1t.textContent='Step 1 — save the videos out';
+    const s1d = document.createElement('div'); s1d.className='opt-d';
+    s1d.textContent = 'Pick a folder inside OneDrive and the files are written there directly — sync then uploads them, which is what puts them in Stream. If your browser does not support folder writing, use the per-file buttons instead.';
+    const s1b = document.createElement('div'); s1b.style.cssText='display:flex;gap:.75rem;margin-top:.875rem;flex-wrap:wrap;align-items:center';
+    const bFolder = document.createElement('button'); bFolder.className='btn btn-primary btn-sm';
+    bFolder.textContent = 'Save all to a folder…';
+    const bEach = document.createElement('button'); bEach.className='btn btn-secondary btn-sm';
+    bEach.textContent = 'Download individually';
+    const fStat = document.createElement('span'); fStat.className='opt-d'; fStat.id='folderStatus';
+    if (!window.showDirectoryPicker){
+      bFolder.disabled = true;
+      fStat.textContent = 'Folder writing needs Chrome or Edge over https — use individual downloads.';
+    }
+    bFolder.addEventListener('click', () => saveAllToFolder(videos, fStat));
+    bEach.addEventListener('click', () => videos.forEach((v,i) => setTimeout(()=>extract(v.path), i*400)));
+    s1b.append(bFolder, bEach, fStat);
+    step1.append(s1t, s1d, s1b);
+    vc.append(step1);
+
+    /* Step 2 — paste the share links back in. */
+    const step2 = document.createElement('div');
+    step2.style.cssText='padding:.875rem 1rem;border:1px solid var(--subway-gray-200);border-radius:.375rem';
+    const s2t = document.createElement('div'); s2t.className='opt-t'; s2t.textContent='Step 2 — paste each Stream share link';
+    const s2d = document.createElement('div'); s2d.className='opt-d';
+    s2d.textContent = 'Wait for the sync tick, then right-click each file in OneDrive › Share › Copy link. Fill in every row and the repair will strip the video out of the deck and point the existing thumbnail at Stream.';
+    step2.append(s2t, s2d);
+
+    const tw = document.createElement('div'); tw.className='table-wrapper'; tw.style.marginTop='.875rem';
+    const tb = document.createElement('table');
+    const th = document.createElement('thead');
+    const hr = document.createElement('tr');
+    for (const h of ['File','Size','Slide','Stream share link','']){
+      const c=document.createElement('th'); c.textContent=h; if(h==='Size') c.className='num'; hr.append(c);
+    }
+    th.append(hr); tb.append(th);
+    const body = document.createElement('tbody');
+    STATE.urlInputs = {};
+    for (const v of videos.sort((x,y)=>y.orig-x.orig)){
+      const tr = document.createElement('tr');
+      const c1 = document.createElement('td'); c1.className='mono'; c1.textContent = v.path.replace('ppt/media/','');
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = fmt(v.orig);
+      const c3 = document.createElement('td'); c3.textContent = v.slides.length ? v.slides.join(', ') : '—';
+      const c4 = document.createElement('td');
+      const inp = document.createElement('input'); inp.type='url'; inp.placeholder='https://…sharepoint.com/…';
+      inp.style.cssText='width:100%;min-width:250px;padding:.375rem .5rem;border:1px solid var(--subway-gray-200);border-radius:.25rem;font-family:inherit;font-size:.8125rem';
+      inp.addEventListener('input', refreshVideoReadiness);
+      STATE.urlInputs[v.path] = inp;
+      c4.append(inp);
+      const c5 = document.createElement('td');
+      const b = document.createElement('button'); b.className='btn btn-secondary btn-sm'; b.textContent='Save out';
+      b.addEventListener('click', () => extract(v.path));
+      c5.append(b);
+      tr.append(c1,c2,c3,c4,c5); body.append(tr);
+    }
+    tb.append(body); tw.append(tb); step2.append(tw);
+
+    const s2s = document.createElement('div'); s2s.className='opt-d'; s2s.id='urlStatus'; s2s.style.marginTop='.75rem';
+    step2.append(s2s);
+    vc.append(step2);
+
+    const hint = document.createElement('div'); hint.className='hint';
+    hint.textContent = 'What this produces is a clickable thumbnail that opens Stream in a browser, not playback inside the slide. True inline playback needs a structure this tool cannot verify without PowerPoint — if you need it, do Insert › Video › Videos Online manually on these slides. Leaving the links blank is fine: the repair then keeps the video embedded and only fixes the images.';
+    vc.append(hint);
+    vs.append(vc);
+    /* The two video steps produce the links the build consumes, so they belong
+       ABOVE the build button, not below it. */
+    r.insertBefore(vs, act);
+    refreshVideoReadiness();
+  }
+
+  /* --- biggest offenders table --- */
+  const big = items.filter(i => i.referenced && i.orig > 300*1024)
+                   .sort((a2,b2)=>(b2.orig-b2.newSize)-(a2.orig-a2.newSize)).slice(0,25);
+  if (big.length){
+    const bs = document.createElement('div'); bs.className='section';
+    const bc = document.createElement('div'); bc.className='card'; bc.style.padding='0';
+    const head = document.createElement('div'); head.style.padding='1.5rem 1.5rem 1rem';
+    const bt = document.createElement('div'); bt.className='section-title'; bt.textContent='Biggest offenders';
+    const bsub = document.createElement('div'); bsub.className='section-subtitle'; bsub.style.marginBottom='0';
+    bsub.textContent='Ranked by how much each part gives back. Dimensions show stored size versus what is kept.';
+    head.append(bt,bsub); bc.append(head);
+    const tw2 = document.createElement('div'); tw2.className='table-wrapper';
+    const t2 = document.createElement('table');
+    const th2 = document.createElement('thead'); const hr2=document.createElement('tr');
+    for (const h of ['Part','Slide','Stored','Kept','Saves','Dimensions','Action']){
+      const c=document.createElement('th'); c.textContent=h; if(['Stored','Kept','Saves'].includes(h)) c.className='num'; hr2.append(c);
+    }
+    th2.append(hr2); t2.append(th2);
+    const tb2 = document.createElement('tbody');
+    for (const i of big){
+      const tr = document.createElement('tr');
+      const mk2 = (txt, cls) => { const c=document.createElement('td'); if(cls)c.className=cls; c.textContent=txt; return c; };
+      tr.append(mk2(i.path.replace('ppt/media/',''), 'mono'));
+      tr.append(mk2(i.slides.length ? (i.slides.length>3 ? i.slides.slice(0,3).join(', ')+' +'+(i.slides.length-3) : i.slides.join(', ')) : '—'));
+      tr.append(mk2(fmt(i.orig), 'num'));
+      tr.append(mk2(i.newSize ? fmt(i.newSize) : '—', 'num'));
+      tr.append(mk2(i.orig-i.newSize > 0 ? '−'+fmt(i.orig-i.newSize) : '—', 'num'));
+      tr.append(mk2(i.ow ? i.ow+'×'+i.oh+' → '+i.w+'×'+i.h : '—'));
+      const ac2 = document.createElement('td');
+      const bd = document.createElement('span');
+      const labels = {keep:['badge-neutral','unchanged'], drop:['badge-error','remove — orphaned'],
+                      recompress:['badge-active','recompress'], convert:['badge-active','PNG → JPEG']};
+      const lab = labels[i.action] || labels.keep;
+      bd.className='badge '+lab[0]; bd.textContent = i.kind==='video' ? 'move to Stream' : lab[1];
+      if (i.kind==='video') bd.className='badge badge-warning';
+      ac2.append(bd); tr.append(ac2);
+      tb2.append(tr);
+    }
+    t2.append(tb2); tw2.append(t2); bc.append(tw2);
+    bs.append(bc); r.append(bs);
+  }
+
+  /* --- what only PowerPoint can fix --- */
+  const ps = document.createElement('div'); ps.className='section';
+  const pc = document.createElement('div'); pc.className='card';
+  const pt = document.createElement('div'); pt.className='section-title'; pt.textContent='What only PowerPoint can fix';
+  const psub = document.createElement('div'); psub.className='section-subtitle';
+  psub.textContent='These live in the slide XML or in PowerPoint’s own editing state and cannot be corrected safely from outside the app.';
+  pc.append(pt, psub);
+  const ul = document.createElement('div'); ul.className='stack';
+  const manual = [
+    ['Cropped-away image data','A cropped photo still stores every original pixel. Select all images, then Picture Format › Compress Pictures › Delete cropped areas of pictures. Often the single largest remaining win.'],
+    ['Editing and undo history','File › Options › Advanced › Image Size and Quality › tick Discard editing data.'],
+    ['Embedded fonts','File › Options › Save — if Embed fonts is on, switch to "Embed only the characters used" or turn it off if the fonts are standard.'],
+    ['Embedded workbooks','Charts pasted with their source workbook carry the whole file. Paste as picture, or link instead of embed.']
+  ];
+  for (const [t,d] of manual){
+    const row=document.createElement('div');
+    row.style.cssText='padding:.875rem 1rem;border:1px solid var(--subway-gray-200);border-radius:.375rem';
+    const a2=document.createElement('div'); a2.className='opt-t'; a2.textContent=t;
+    const b2=document.createElement('div'); b2.className='opt-d'; b2.textContent=d;
+    row.append(a2,b2); ul.append(row);
+  }
+  pc.append(ul);
+  const pfoot=document.createElement('div'); pfoot.className='hint';
+  pfoot.textContent='Presenting tip: a heavy deck presents far better through PowerPoint Live in Teams than through local Slide Show, because Teams renders it server-side. Always carry a PDF export as a fallback.';
+  pc.append(pfoot);
+  ps.append(pc); r.append(ps);
+}
+
+/* ---- repair ------------------------------------------------------------- */
+function doRepair(orphans, videos){
+  const videoUrls = collectVideoUrls();
+  const opts = {
+    doRaster: el('optRaster') && el('optRaster').checked && !el('optRaster').disabled,
+    dropOrphans: el('optOrphan') && el('optOrphan').checked && !el('optOrphan').disabled,
+    dropThumb: el('optThumb') && el('optThumb').checked && !el('optThumb').disabled,
+    orphans: orphans.map(o => o.path),
+    videos: videos.map(v => v.path),
+    videoUrls
+  };
+  STATE.delinked = Object.keys(videoUrls).length > 0;
+  el('btnRepair').disabled = true;
+  setProgress({title:'Building repaired deck', pct:1,
+               text: STATE.delinked ? 'De-linking video and copying parts…' : 'Copying parts…'});
+  WORKER.postMessage({cmd:'repair', opts});
+}
+
+function onRepaired(blob, info){
+  el('progressSection').classList.add('hidden');
+  const btn = el('btnRepair'); if (btn) btn.disabled = false;
+  const host = el('dlHost'); if (!host) return;
+  host.replaceChildren();
+
+  const box = document.createElement('div');
+  box.style.cssText='padding:1rem;border:1px solid #A7E3B4;background:#F3FBF5;border-radius:.375rem';
+  const t = document.createElement('div'); t.className='opt-t';
+  t.textContent = 'Repaired deck ready — ' + fmt(STATE.size) + ' → ' + fmt(blob.size) +
+                  '  (' + Math.round(100*(STATE.size-blob.size)/STATE.size) + '% smaller)';
+  const d = document.createElement('div'); d.className='opt-d';
+  d.textContent = (info && info.delinked)
+    ? info.delinked + ' video file' + (info.delinked>1?'s':'') +
+      ' removed and repointed at Stream. Open the deck and check slides with video before you send it — ' +
+      'the thumbnails should look unchanged and clicking one should open Stream.'
+    : 'Open it and click through every slide before you trust it. Your original is untouched.';
+  box.append(t, d);
+
+  if (info && info.notes && info.notes.length){
+    const n = document.createElement('div');
+    n.style.cssText='margin-top:.75rem;padding:.625rem .75rem;background:#FEF3C7;border:1px solid #FCD34D;border-radius:.25rem;font-size:.8125rem;color:#92400E';
+    const nt = document.createElement('div'); nt.style.fontWeight='600';
+    nt.textContent = 'Pre-existing problems found in the source deck:';
+    n.append(nt);
+    for (const line of info.notes.slice(0,6)){
+      const li = document.createElement('div'); li.textContent = '· ' + line; n.append(li);
+    }
+    box.append(n);
+  }
+
+  const a = document.createElement('a');
+  a.className='btn btn-primary'; a.style.marginTop='.875rem';
+  a.href = URL.createObjectURL(blob);
+  a.download = STATE.name.replace(/\.pptm?x$/i, '') +
+               (info && info.delinked ? ' (repaired, video on Stream).pptx' : ' (repaired).pptx');
+  a.textContent = 'Download repaired deck';
+  box.append(a); host.append(box);
+}
+
+/* ---- video extraction --------------------------------------------------- */
+const EXTRACT_WAITERS = {};
+
+function extract(path){ WORKER.postMessage({cmd:'extract', path}); }
+
+function extractBytes(path){
+  return new Promise(resolve => {
+    EXTRACT_WAITERS[path] = resolve;
+    WORKER.postMessage({cmd:'extract', path});
+  });
+}
+
+function onExtracted({path, buf}){
+  if (EXTRACT_WAITERS[path]){ const f = EXTRACT_WAITERS[path]; delete EXTRACT_WAITERS[path]; f(buf); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([buf]));
+  a.download = path.replace('ppt/media/','');
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 30000);
+}
+
+/* Writes the videos into a folder the user picks. Pointed at a OneDrive-synced
+   folder this is the upload: the sync client does the rest. Chrome/Edge only,
+   and it needs a secure context — file:// has no File System Access API. */
+async function saveAllToFolder(videos, statusEl){
+  let dir;
+  try { dir = await window.showDirectoryPicker({mode:'readwrite', id:'deckdoctor'}); }
+  catch (e){ statusEl.textContent = 'Folder selection cancelled — nothing written.'; return; }
+  let done = 0;
+  for (const v of videos){
+    const stem = v.path.replace('ppt/media/','');
+    const name = 'slide' + String(v.slides[0] || 0).padStart(2,'0') + '-' + stem;
+    statusEl.textContent = 'Writing ' + name + ' (' + (done+1) + ' of ' + videos.length + ')…';
+    try {
+      const buf = await extractBytes(v.path);
+      const fh = await dir.getFileHandle(name, {create:true});
+      const w = await fh.createWritable();
+      await w.write(new Blob([buf]));
+      await w.close();
+      done++;
+    } catch (e){
+      statusEl.textContent = 'Stopped at ' + name + ': ' + (e.message || e) +
+        ' — ' + done + ' of ' + videos.length + ' written.';
+      return;
+    }
+  }
+  statusEl.textContent = done + ' file' + (done > 1 ? 's' : '') +
+    ' written. Wait for OneDrive to show the sync tick before copying share links.';
+}
+
+/* Video can only be removed when every link is present — a partial set would
+   leave some slides pointing at media that is no longer in the package. */
+function refreshVideoReadiness(){
+  if (!STATE || !STATE.urlInputs) return;
+  const all = Object.values(STATE.urlInputs);
+  if (!all.length) return;
+  const ok = all.filter(i => /^https?:\/\/\S+$/i.test(i.value.trim()));
+  const st = el('urlStatus'), btn = el('btnRepair');
+  if (st){
+    st.textContent = ok.length === 0
+      ? 'No links yet — repair will fix the images and leave video embedded.'
+      : ok.length < all.length
+        ? ok.length + ' of ' + all.length + ' links filled. Every row needs one before video can be removed.'
+        : 'All ' + all.length + ' links valid — repair will strip the video out of the deck.';
+  }
+  if (btn) btn.textContent = ok.length === all.length
+    ? 'Build repaired copy (video de-linked)' : 'Build repaired copy';
+}
+
+function collectVideoUrls(){
+  if (!STATE.urlInputs) return {};
+  const all = Object.entries(STATE.urlInputs);
+  const filled = all.filter(([,i]) => /^https?:\/\/\S+$/i.test(i.value.trim()));
+  if (!all.length || filled.length !== all.length) return {};   // all-or-nothing
+  const out = {};
+  for (const [path, inp] of all) out[path] = inp.value.trim();
+  return out;
+}
+</script>
+</body>
+</html>
